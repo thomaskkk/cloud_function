@@ -1,1 +1,5 @@
-functions-framework==3.2.1
+functions-framework==3.4.0
+confuse==1.7.0
+pandas==2.1.0
+numpy==1.25.2
+PyYAML==6.0.1
