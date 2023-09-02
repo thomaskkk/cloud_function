@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "name":"Python: functions_framework",
+            "type":"python",
+            "request":"launch",
+            "module":"functions_framework",
+            "args": [
+                "--target",
+                "main",
+                "--debug"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Deploy Cloud Function",
+            "type": "cloudcode.cloudfunctions",
+            "request": "launch",
+            "functionName": "function-hello-world",
+            "gen": "GEN_2",
+            "entryPoint": "hello_get"
+        }
+    ]
+}
