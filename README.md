@@ -1,7 +1,7 @@
 
-# Cloud function
+# Jira metrics Eazybi Cloud functions
 
-This is a simple experiment and learn GCP Cloud functions
+This is a alternative version to Jira metrics Eazybi that can be deployed to a cloud function.
 
 ## How to setup dev enviroment
 ### Setup
