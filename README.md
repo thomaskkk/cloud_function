@@ -5,6 +5,59 @@ This a simple API that captures a public report from Eazybi and do calculations 
 The output could be, for example: How many itens the team could deliver in 14 days with 85% cofidence(percentile)?
 
 This is a alternative version to Jira metrics Eazybi that can be deployed to a cloud function.
+
+Sample output:
+```json
+{
+    "schema": {
+        "fields": [
+            {
+                "name": "project",
+                "type": "string"
+            },
+            {
+                "name": "cycletime 50%",
+                "type": "integer"
+            },
+            {
+                "name": "cycletime 85%",
+                "type": "integer"
+            },
+            {
+                "name": "cycletime 95%",
+                "type": "integer"
+            },
+            {
+                "name": "montecarlo 50%",
+                "type": "integer"
+            },
+            {
+                "name": "montecarlo 85%",
+                "type": "integer"
+            },
+            {
+                "name": "montecarlo 95%",
+                "type": "integer"
+            }
+        ],
+        "primaryKey": [
+            "project"
+        ],
+        "pandas_version": "1.4.0"
+    },
+    "data": [
+        {
+            "project": "JP",
+            "cycletime 50%": 3,
+            "cycletime 85%": 14,
+            "cycletime 95%": 29,
+            "montecarlo 50%": 18,
+            "montecarlo 85%": 12,
+            "montecarlo 95%": 9
+        }
+    ]
+}
+```
 ## How to use
 ### Eazybi public report
 Create an Eazybi report to be consumed by this api, example:

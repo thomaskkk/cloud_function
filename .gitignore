@@ -65,3 +65,4 @@ venv.bak/
 
 #secrets
 secrets/*
+src/secrets/*

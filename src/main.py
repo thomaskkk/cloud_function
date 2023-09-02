@@ -24,19 +24,22 @@ def main(request):
         <https://cloud.google.com/functions/docs/writing/http#http_frameworks>
     """
     request_dict = request.get_json()
-    config(request_dict.get("squad"))
-    report_url = generate_url()
-    kanban_data = get_eazybi_report(report_url)
-    ct = calc_cycletime_percentile(kanban_data)
-    today = date.today().strftime("%Y-%m-%d")
-    past = date.today() - timedelta(days=cfg["Throughput_range"].get())
-    past = past.strftime("%Y-%m-%d")
-    tp = calc_throughput(kanban_data, past, today)
-    mc = run_simulation(tp)
-    mc = mc.rename(index={"issues": kanban_data.loc[0]["project"]})
-    result = ct.merge(mc, left_index=True, right_index=True)
+    config_error = config(request_dict.get("squad"))
+    if config_error:
+        return config_error
+    else:
+        report_url = generate_url()
+        kanban_data = get_eazybi_report(report_url)
+        ct = calc_cycletime_percentile(kanban_data)
+        today = date.today().strftime("%Y-%m-%d")
+        past = date.today() - timedelta(days=cfg["Throughput_range"].get())
+        past = past.strftime("%Y-%m-%d")
+        tp = calc_throughput(kanban_data, past, today)
+        mc = run_simulation(tp)
+        mc = mc.rename(index={"issues": kanban_data.loc[0]["project"]})
+        result = ct.merge(mc, left_index=True, right_index=True)
 
-    return result.to_json(orient="table")
+        return result.to_json(orient="table")
 
 
 def config(squad):
