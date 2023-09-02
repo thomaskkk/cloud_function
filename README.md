@@ -4,7 +4,7 @@ This a simple API that captures a public report from Eazybi and do calculations 
 
 The output could be, for example: How many itens the team could deliver in 14 days with 85% cofidence(percentile)?
 
-This is a alternative version to Jira metrics Eazybi that can be deployed to a cloud function.
+This is a alternative version to [Jira metrics Eazybi](https://github.com/thomaskkk/jira_metrics_eazybi) that can be deployed to a GCP Cloud Function.
 
 Sample output:
 ```json
