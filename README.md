@@ -72,6 +72,6 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
-`launch.json` is sample to use be able to debug locally in vscode,add it to your `.vscode` dir.
+`launch.json` is a sample file to be able to debug locally in vscode,add it to your `.vscode` dir.
 
 To be able to generate http requests Postman vscode extension is recommended.
