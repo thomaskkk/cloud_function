@@ -1,6 +1,5 @@
 import functions_framework
 import os
-import json
 import confuse
 import yaml
 import pandas as pd
@@ -41,6 +40,7 @@ def main(request):
 
 
 def config(squad):
+        """Set config based on files or enviroment variables"""
         if os.path.isfile("secrets/" + str(squad) + ".yml"):
             cfg.set_file("secrets/" + str(squad) + ".yml")
         elif os.environ.get(squad):
@@ -67,7 +67,7 @@ def generate_url():
     return url
 
 def get_eazybi_report(report_url):
-    """Capturea eazybi data from an url and convert to a dictionary"""
+    """Capture eazybi data from an url and convert to a dictionary"""
     dictio = pd.read_csv(report_url, delimiter=",", parse_dates=["Time"])
     dictio.columns = ["project", "date", "issue", "cycletime"]
     return dictio
