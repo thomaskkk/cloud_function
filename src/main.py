@@ -1,12 +1,12 @@
 import functions_framework
 import os
-import confuse
+import jsonschema
 import yaml
 import pandas as pd
 import numpy as np
 from datetime import date, timedelta
 
-cfg = confuse.Configuration('MyGreatApp', __name__)
+cfg = {}
 
 @functions_framework.http
 def main(request):
@@ -23,8 +23,9 @@ def main(request):
         Functions, see the `Writing HTTP functions` page.
         <https://cloud.google.com/functions/docs/writing/http#http_frameworks>
     """
-    request_dict = request.get_json()
-    config_error = config(request_dict.get("squad"))
+    global cfg
+    cfg = request.get_json()
+    config_error = test_config(cfg)
     if config_error:
         return config_error
     else:
@@ -32,7 +33,7 @@ def main(request):
         kanban_data = get_eazybi_report(report_url)
         ct = calc_cycletime_percentile(kanban_data)
         today = date.today().strftime("%Y-%m-%d")
-        past = date.today() - timedelta(days=cfg["Throughput_range"].get())
+        past = date.today() - timedelta(days=cfg["Throughput_range"])
         past = past.strftime("%Y-%m-%d")
         tp = calc_throughput(kanban_data, past, today)
         mc = run_simulation(tp)
@@ -42,18 +43,48 @@ def main(request):
         return result.to_json(orient="table")
 
 
-def config(squad):
-        """Set config based on files or enviroment variables"""
-        if os.path.isfile("secrets/" + str(squad) + ".yml"):
-            cfg.set_file("secrets/" + str(squad) + ".yml")
-        elif os.environ.get(squad):
-            yaml_string =  os.environ.get(squad)
-            yaml_data = yaml.load(yaml_string, Loader=yaml.FullLoader)
-            cfg.set(yaml_data)
-        else:
+def test_config(cfg):
+        """Test config from json body"""
+        validationSchema = {
+            "type": "object",
+            "properties": {
+                "Account_number": {"type": "integer"},
+                "Report_number": {"type": "integer"},
+                "Report_token": {"type": "string"},
+                "Cycletime": {
+                    "type": "object",
+                    "properties": {
+                        "Percentiles": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        }
+                    }
+                },
+                "Throughput_range": {"type": "integer"},
+                "Montecarlo": {
+                    "type": "object",
+                    "properties": {
+                        "Simulations": {"type": "integer"},
+                        "Simulation_days": {"type": "integer"},
+                        "Percentiles": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        try:
+            jsonschema.validate(instance=cfg, schema=validationSchema)
+        except jsonschema.exceptions.ValidationError as err:
             return {
                 "message": {
-                    "filename": "You don't have any valid config files",
+                    "json_body": "You invalid entries in config Json",
                 }
             }
 
@@ -88,7 +119,7 @@ def calc_cycletime_percentile(kanban_data, percentile=None):
             return issuetype
         else:
             cycletime = None
-            for cfg_percentile in cfg["Cycletime"]["Percentiles"].get():
+            for cfg_percentile in cfg["Cycletime"]["Percentiles"]:
                 temp_cycletime = (
                     kanban_data.groupby("project")
                     .cycletime.quantile(cfg_percentile / 100)
@@ -155,9 +186,9 @@ def run_simulation(throughput, simul=None, simul_days=None):
             days to run the simulation
     """
     if simul is None:
-        simul = cfg["Montecarlo"]["Simulations"].get()
+        simul = cfg["Montecarlo"]["Simulations"]
     if simul_days is None:
-        simul_days = cfg["Montecarlo"]["Simulation_days"].get()
+        simul_days = cfg["Montecarlo"]["Simulation_days"]
 
     mc = None
     if throughput is not None:
@@ -176,7 +207,7 @@ def run_simulation(throughput, simul=None, simul_days=None):
         ) / distribution.Frequency.sum()
         mc_results = {}
         # Get nearest neighbor result
-        for percentil in cfg["Montecarlo"]["Percentiles"].get():
+        for percentil in cfg["Montecarlo"]["Percentiles"]:
             result_index = distribution["Probability"].sub(percentil).abs().idxmin()
             mc_results["montecarlo " + str(percentil) + "%"] = distribution.loc[
                 result_index, "Items"

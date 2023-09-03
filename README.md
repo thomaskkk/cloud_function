@@ -75,44 +75,36 @@ Your table/data should look like this:
 | JP | Aug 25 2022 | JP-105 | 24
 | JP | Aug 29 2022 | JP-110 | 30
 
-Save the report and make it public with an access token.
-
-### Configuration
-You can add your configuration using GCP enviroment variables or you can also add a real config file as an alternative you can use GCP Secret Manager to emulate a config file.
-
-You can have multiple Secrets (entries/filenames) for multiple Eazybi accounts, for example each one representing one squad.
-
-#### GCP Secret Manager as enviroment variables
-- Open `config_file_sample.yml` and paste all info from the public report: Account_number, Report_number, Report_token
-- Check for any further changes necessary to the yaml file.
-- Use the GCP Secret Manager to create a secret and paste the contents of the updated `config_file_sample.yml` structure.
-- You can safely delete the `config_file_sample.yml`
-- When deploying your Cloud function make the secret accessible from a enviroment variable.
-- Give permissions for your Cloud function to access your secret.
-
-#### Config file / GCP Secret Manager emulating a config file
-- Open config_file_sample.yml and paste all info from the public report: Account_number, Report_number, Report_token
-- Check for any further changes necessary to the yaml file.
-- Copy the file to `secrets/<desired_config_filename>.yml`
-- As an alternative you can configure GCP Secret Manager to emulate a file.
-
-### Cloud function creation
-To create you cloud function:
-- Set up your secret make it avaliable using instructions above.
-- Paste the contents from `main.py` in the `src/` dir to your cloud function file.
-- Paste the contents from `requirements.txt`.
-- Define your entrypoint as `main`.
-
+Save the report and make it public with an access token, you will use this info in the request Json body.
 
 ### Configure API Eazybi project
 Go to your account Source Data tab and add a new source aplication as a `Rest:API`.
 - Your source data URL should be <your_gcp_server_url>/eazybi/<your_secret_name_or_config_filename_without_.yml>
     - Example: https://jira-metrics-eazybi.app/eazybi/jp
 - Set request method to `POST`
-- Add to the request body a single json entry title `squad` with value `secret_name`
+- Add to the request body the report details and calculation configuration:
 ```json
 {
-    "squad": "secret_name"
+    "Account_number": "Eazybi report account number, integer (without quotes)",
+    "Report_number": "Eazybi report number, integer (without quotes)",
+    "Report_token": "Eazybi report token, string (WITH quotes)",
+    "Cycletime": {
+        "Percentiles": [
+            50,
+            85,
+            95
+        ]
+    },
+    "Throughput_range": 90,
+    "Montecarlo": {
+        "Simulations": 10000,
+        "Simulation_days": 14,
+        "Percentiles": [
+            50,
+            85,
+            95
+        ]
+    }
 }
 ```
 - Content type to `JSON`
@@ -123,7 +115,7 @@ Go to your account Source Data tab and add a new source aplication as a `Rest:AP
 ```bash
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements_dev.txt
 ```
 `launch.json` is a sample file to be able to debug locally in vscode,add it to your `.vscode` dir.
 
