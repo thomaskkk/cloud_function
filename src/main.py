@@ -118,31 +118,22 @@ def get_eazybi_report(report_url):
 def calc_cycletime_percentile(cfg, kanban_data, percentile=None):
     """Calculate cycletime percentiles on cfg with all dict entries"""
     if kanban_data.empty is False:
-        if percentile is not None:
-            issuetype = (
+        cycletime = None
+        for cfg_percentile in cfg["Cycletime"]["Percentiles"]:
+            temp_cycletime = (
                 kanban_data.groupby("project")
-                .cycletime.quantile(percentile / 100)
+                .cycletime.quantile(cfg_percentile / 100)
+                .rename("cycletime " + str(cfg_percentile) + "%")
                 .apply(np.ceil)
                 .astype("int")
             )
-            return issuetype
-        else:
-            cycletime = None
-            for cfg_percentile in cfg["Cycletime"]["Percentiles"]:
-                temp_cycletime = (
-                    kanban_data.groupby("project")
-                    .cycletime.quantile(cfg_percentile / 100)
-                    .rename("cycletime " + str(cfg_percentile) + "%")
-                    .apply(np.ceil)
-                    .astype("int")
+            if cycletime is None:
+                cycletime = temp_cycletime.to_frame()
+            else:
+                cycletime = cycletime.merge(
+                    temp_cycletime, left_index=True, right_index=True
                 )
-                if cycletime is None:
-                    cycletime = temp_cycletime.to_frame()
-                else:
-                    cycletime = cycletime.merge(
-                        temp_cycletime, left_index=True, right_index=True
-                    )
-            return cycletime
+        return cycletime
 
 def calc_throughput(kanban_data, start_date=None, end_date=None):
     """Change the pandas DF to a Troughput per day format, a good
