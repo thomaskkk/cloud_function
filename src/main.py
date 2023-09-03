@@ -6,8 +6,6 @@ import pandas as pd
 import numpy as np
 from datetime import date, timedelta
 
-cfg = {}
-
 @functions_framework.http
 def main(request):
     """HTTP Cloud Function.
@@ -23,20 +21,19 @@ def main(request):
         Functions, see the `Writing HTTP functions` page.
         <https://cloud.google.com/functions/docs/writing/http#http_frameworks>
     """
-    global cfg
     cfg = request.get_json()
     config_error = test_config(cfg)
     if config_error:
         return config_error
     else:
-        report_url = generate_url()
+        report_url = generate_url(cfg)
         kanban_data = get_eazybi_report(report_url)
-        ct = calc_cycletime_percentile(kanban_data)
+        ct = calc_cycletime_percentile(cfg, kanban_data)
         today = date.today().strftime("%Y-%m-%d")
         past = date.today() - timedelta(days=cfg["Throughput_range"])
         past = past.strftime("%Y-%m-%d")
         tp = calc_throughput(kanban_data, past, today)
-        mc = run_simulation(tp)
+        mc = run_simulation(cfg, tp)
         mc = mc.rename(index={"issues": kanban_data.loc[0]["project"]})
         result = ct.merge(mc, left_index=True, right_index=True)
 
@@ -58,9 +55,14 @@ def test_config(cfg):
                             "type": "array",
                             "items": {
                                 "type": "number"
-                            }
+                            },
+                            "minItems": 1,
+                            "maxItems": 5
                         }
-                    }
+                    },
+                    "required": ["Percentiles"],
+                    "minProperties": 1,
+                    "maxProperties": 1
                 },
                 "Throughput_range": {"type": "integer"},
                 "Montecarlo": {
@@ -72,11 +74,20 @@ def test_config(cfg):
                             "type": "array",
                             "items": {
                                 "type": "number"
-                            }
+                            },
+                            "minItems": 1,
+                            "maxItems": 5
                         }
-                    }
+                    },
+                    "required": ["Simulations", "Simulation_days", "Percentiles"],
+                    "minProperties": 3,
+                    "maxProperties": 3
                 }
-            }
+            },
+            "required": ["Account_number", "Report_number", "Report_token", "Cycletime", "Throughput_range",  "Montecarlo"],
+            "minProperties": 6,
+            "maxProperties": 6
+
         }
         
         try:
@@ -88,7 +99,7 @@ def test_config(cfg):
                 }
             }
 
-def generate_url():
+def generate_url(cfg):
     """Generate a url to fetch eazybi data"""
     url = (
         "https://aod.eazybi.com/accounts/"
@@ -106,7 +117,7 @@ def get_eazybi_report(report_url):
     dictio.columns = ["project", "date", "issue", "cycletime"]
     return dictio
 
-def calc_cycletime_percentile(kanban_data, percentile=None):
+def calc_cycletime_percentile(cfg, kanban_data, percentile=None):
     """Calculate cycletime percentiles on cfg with all dict entries"""
     if kanban_data.empty is False:
         if percentile is not None:
@@ -172,7 +183,7 @@ def calc_throughput(kanban_data, start_date=None, end_date=None):
             )
         return throughput
 
-def run_simulation(throughput, simul=None, simul_days=None):
+def run_simulation(cfg, throughput, simul=None, simul_days=None):
     """Run monte carlo simulation with the result of how many itens will
     be delivered in a set of days
 

@@ -2,7 +2,7 @@ import pytest
 import json
 
 @pytest.fixture(scope="module")
-def input_json():
+def cfg_json():
     input_json = '''
 {
     "Account_number": 12345,
