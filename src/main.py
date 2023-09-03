@@ -117,7 +117,7 @@ def get_eazybi_report(report_url):
 
 def calc_cycletime_percentile(cfg, kanban_data, percentile=None):
     """Calculate cycletime percentiles on cfg with all dict entries"""
-    if kanban_data.empty is False:
+    if not kanban_data.empty:
         cycletime = None
         for cfg_percentile in cfg["Cycletime"]["Percentiles"]:
             temp_cycletime = (
@@ -128,10 +128,10 @@ def calc_cycletime_percentile(cfg, kanban_data, percentile=None):
                 .astype("int")
             )
             if cycletime is None:
-                cycletime = temp_cycletime.to_frame()
+                cycletime = pd.DataFrame(temp_cycletime)
             else:
-                cycletime = cycletime.merge(
-                    temp_cycletime, left_index=True, right_index=True
+                cycletime = pd.merge(
+                    cycletime, temp_cycletime, left_index=True, right_index=True
                 )
         return cycletime
 
