@@ -1,7 +1,5 @@
 import functions_framework
-import os
 import jsonschema
-import yaml
 import pandas as pd
 import numpy as np
 from datetime import date, timedelta
