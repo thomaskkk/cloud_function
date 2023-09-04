@@ -117,32 +117,23 @@ def get_eazybi_report(report_url):
 
 def calc_cycletime_percentile(cfg, kanban_data, percentile=None):
     """Calculate cycletime percentiles on cfg with all dict entries"""
-    if kanban_data.empty is False:
-        if percentile is not None:
-            issuetype = (
+    if not kanban_data.empty:
+        cycletime = None
+        for cfg_percentile in cfg["Cycletime"]["Percentiles"]:
+            temp_cycletime = (
                 kanban_data.groupby("project")
-                .cycletime.quantile(percentile / 100)
+                .cycletime.quantile(cfg_percentile / 100)
+                .rename("cycletime " + str(cfg_percentile) + "%")
                 .apply(np.ceil)
                 .astype("int")
             )
-            return issuetype
-        else:
-            cycletime = None
-            for cfg_percentile in cfg["Cycletime"]["Percentiles"]:
-                temp_cycletime = (
-                    kanban_data.groupby("project")
-                    .cycletime.quantile(cfg_percentile / 100)
-                    .rename("cycletime " + str(cfg_percentile) + "%")
-                    .apply(np.ceil)
-                    .astype("int")
+            if cycletime is None:
+                cycletime = pd.DataFrame(temp_cycletime)
+            else:
+                cycletime = pd.merge(
+                    cycletime, temp_cycletime, left_index=True, right_index=True
                 )
-                if cycletime is None:
-                    cycletime = temp_cycletime.to_frame()
-                else:
-                    cycletime = cycletime.merge(
-                        temp_cycletime, left_index=True, right_index=True
-                    )
-            return cycletime
+        return cycletime
 
 def calc_throughput(kanban_data, start_date=None, end_date=None):
     """Change the pandas DF to a Troughput per day format, a good
@@ -159,27 +150,26 @@ def calc_throughput(kanban_data, start_date=None, end_date=None):
         end_date : date
             final date of the throughput
     """
-    if start_date is not None and "date" in kanban_data.columns:
-        kanban_data = kanban_data[~(kanban_data["date"] < start_date)]
-    if end_date is not None and "date" in kanban_data.columns:
-        kanban_data = kanban_data[~(kanban_data["date"] > end_date)]
-    if kanban_data.empty is False:
-        # Reorganize DataFrame
-        throughput = pd.crosstab(
-            kanban_data.date, columns=["issues"], colnames=[None]
-        ).reset_index()
-        if throughput.empty is False and (
-            start_date is not None and end_date is not None
-        ):
-            date_range = pd.date_range(start=start_date, end=end_date)
-            throughput = (
-                throughput.set_index("date")
-                .reindex(date_range)
-                .fillna(0)
-                .astype(int)
-                .rename_axis("Date")
-            )
-        return throughput
+    if "date" in kanban_data.columns:
+        if start_date is not None:
+            kanban_data = kanban_data[kanban_data["date"] >= start_date]
+        if end_date is not None:
+            kanban_data = kanban_data[kanban_data["date"] <= end_date]
+        if kanban_data.empty is False:
+            # Reorganize DataFrame
+            throughput = pd.crosstab(
+                kanban_data.date, columns=["issues"], colnames=[None]
+            ).reset_index()
+            if throughput.empty is False and (
+                start_date is not None and end_date is not None
+            ):
+                date_range = pd.date_range(start=start_date, end=end_date)
+                throughput = (
+                    throughput.set_index("date")
+                    .reindex(date_range, fill_value=0)
+                    .rename_axis("Date")
+                )
+            return throughput
 
 def run_simulation(cfg, throughput, simul=None, simul_days=None):
     """Run monte carlo simulation with the result of how many itens will
