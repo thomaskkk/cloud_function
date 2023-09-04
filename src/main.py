@@ -150,27 +150,26 @@ def calc_throughput(kanban_data, start_date=None, end_date=None):
         end_date : date
             final date of the throughput
     """
-    if start_date is not None and "date" in kanban_data.columns:
-        kanban_data = kanban_data[~(kanban_data["date"] < start_date)]
-    if end_date is not None and "date" in kanban_data.columns:
-        kanban_data = kanban_data[~(kanban_data["date"] > end_date)]
-    if kanban_data.empty is False:
-        # Reorganize DataFrame
-        throughput = pd.crosstab(
-            kanban_data.date, columns=["issues"], colnames=[None]
-        ).reset_index()
-        if throughput.empty is False and (
-            start_date is not None and end_date is not None
-        ):
-            date_range = pd.date_range(start=start_date, end=end_date)
-            throughput = (
-                throughput.set_index("date")
-                .reindex(date_range)
-                .fillna(0)
-                .astype(int)
-                .rename_axis("Date")
-            )
-        return throughput
+    if "date" in kanban_data.columns:
+        if start_date is not None:
+            kanban_data = kanban_data[kanban_data["date"] >= start_date]
+        if end_date is not None:
+            kanban_data = kanban_data[kanban_data["date"] <= end_date]
+        if kanban_data.empty is False:
+            # Reorganize DataFrame
+            throughput = pd.crosstab(
+                kanban_data.date, columns=["issues"], colnames=[None]
+            ).reset_index()
+            if throughput.empty is False and (
+                start_date is not None and end_date is not None
+            ):
+                date_range = pd.date_range(start=start_date, end=end_date)
+                throughput = (
+                    throughput.set_index("date")
+                    .reindex(date_range, fill_value=0)
+                    .rename_axis("Date")
+                )
+            return throughput
 
 def run_simulation(cfg, throughput, simul=None, simul_days=None):
     """Run monte carlo simulation with the result of how many itens will

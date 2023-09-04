@@ -17,8 +17,6 @@ def test_url_generates_from_config_json(cfg_json):
     # Then
     assert url == "https://aod.eazybi.com/accounts/12345/export/report/1234567-api-export.csv?embed_token=largest_token_ever_123"
 
-
-# Tests that the function correctly calculates cycletime percentiles for a single project
 def test_calc_cycletime_percentile_single_project():
     # Given
     cfg = {
@@ -41,3 +39,20 @@ def test_calc_cycletime_percentile_single_project():
 
     # Then
     assert result.equals(expected_result)
+
+def test_valid_dataframe_with_date_and_issue_columns():
+    # Given - Create a valid pandas dataframe with date and issue columns
+    kanban_data = pd.DataFrame({
+        'date': ['2021-01-01', '2021-01-01', '2021-01-02', '2021-01-03'],
+        'issue': ['JP-1', 'JP-2', 'JP-3', 'JP-4']
+    })
+
+    # When - Call the calc_throughput function
+    throughput = main.calc_throughput(kanban_data)
+
+    # Then - Assert that the throughput dataframe is correct
+    expected_throughput = pd.DataFrame({
+        'date': ['2021-01-01', '2021-01-02', '2021-01-03'],
+        'issues': [2, 1, 1]
+    })
+    pd.testing.assert_frame_equal(throughput, expected_throughput)
