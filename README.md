@@ -78,7 +78,7 @@ Your table/data should look like this:
 Save the report and make it public with an access token, you will use this info in the request Json body.
 
 ### Setup a GCP Cloud function
-Create an enviroment variable with the name `AUTH_BEARER_TOKEN` with a secret token of your choice
+Create a runtime enviroment variable with the name `AUTH_BEARER_TOKEN` with a secret token of your choice
 
 You should configure the cloud function as usual copying `main.py` and `requirements.txt` and define the entrypoint as `main`
 
