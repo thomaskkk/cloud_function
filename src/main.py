@@ -21,7 +21,7 @@ def main(request):
         <https://cloud.google.com/functions/docs/writing/http#http_frameworks>
     """
     cfg = request.get_json()
-    logging.debug(cfg)
+    logging.warning(f"Json received: {cfg}")
     config_error = test_config(cfg)
     if config_error:
         return config_error
@@ -37,7 +37,7 @@ def main(request):
         mc = mc.rename(index={"issues": kanban_data.loc[0]["project"]})
         result = ct.merge(mc, left_index=True, right_index=True)
         final_result = result.to_json(orient="table")
-        logging.debug(final_result)
+        logging.warning(f"Result: {final_result}")
         return final_result
 
 
