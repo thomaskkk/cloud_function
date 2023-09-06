@@ -59,7 +59,7 @@ Sample output:
 }
 ```
 ## How to use
-### Eazybi public report
+### Setup an Eazybi public report
 Create an Eazybi report to be consumed by this api, example:
 - Rows
     - Project dimension, Project hierarchy level
@@ -76,6 +76,11 @@ Your table/data should look like this:
 | JP | Aug 29 2022 | JP-110 | 30
 
 Save the report and make it public with an access token, you will use this info in the request Json body.
+
+### Setup a GCP Cloud function
+Create an enviroment variable with the name `AUTH_BEARER_TOKEN` with a secret token of your choice
+
+You should configure the cloud function as usual copying `main.py` and `requirements.txt` and define the entrypoint as `main`
 
 ### Configure API Eazybi project
 Go to your account Source Data tab and add a new source aplication as a `Rest:API`.
@@ -107,6 +112,9 @@ Go to your account Source Data tab and add a new source aplication as a `Rest:AP
     }
 }
 ```
+- Set Authentication parameters as `HTTP header`
+    - Header name `Authorization`
+    - Header value the token created as an eviroment varialbe on your cloud function
 - Content type to `JSON`
 - Data path to `$.data`
 
@@ -120,3 +128,5 @@ pip install -r requirements_dev.txt
 `launch.json` is a sample file to be able to debug locally in vscode,add it to your `.vscode` dir.
 
 To be able to generate http requests Postman vscode extension is recommended.
+
+You can create a enviroment variable creating a `.env` file.
