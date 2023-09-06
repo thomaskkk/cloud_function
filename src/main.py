@@ -1,8 +1,10 @@
 import functions_framework
 import logging
 import jsonschema
+import os
 import pandas as pd
 import numpy as np
+from flask import abort
 from datetime import date, timedelta
 
 @functions_framework.http
@@ -20,26 +22,37 @@ def main(request):
         Functions, see the `Writing HTTP functions` page.
         <https://cloud.google.com/functions/docs/writing/http#http_frameworks>
     """
-    cfg = request.get_json()
-    logging.warning(f"Json received: {cfg}")
-    config_error = test_config(cfg)
-    if config_error:
-        return config_error
+    if check_authorization(request):
+        cfg = request.get_json()
+        logging.warning(f"Json received: {cfg}")
+        config_error = test_config(cfg)
+        if config_error:
+            return config_error
+        else:
+            report_url = generate_url(cfg)
+            kanban_data = get_eazybi_report(report_url)
+            ct = calc_cycletime_percentile(cfg, kanban_data)
+            today = date.today().strftime("%Y-%m-%d")
+            past = date.today() - timedelta(days=cfg["Throughput_range"])
+            past = past.strftime("%Y-%m-%d")
+            tp = calc_throughput(kanban_data, past, today)
+            mc = run_simulation(cfg, tp)
+            mc = mc.rename(index={"issues": kanban_data.loc[0]["project"]})
+            result = ct.merge(mc, left_index=True, right_index=True)
+            final_result = result.to_json(orient="table")
+            logging.warning(f"Result: {final_result}")
+            return final_result
     else:
-        report_url = generate_url(cfg)
-        kanban_data = get_eazybi_report(report_url)
-        ct = calc_cycletime_percentile(cfg, kanban_data)
-        today = date.today().strftime("%Y-%m-%d")
-        past = date.today() - timedelta(days=cfg["Throughput_range"])
-        past = past.strftime("%Y-%m-%d")
-        tp = calc_throughput(kanban_data, past, today)
-        mc = run_simulation(cfg, tp)
-        mc = mc.rename(index={"issues": kanban_data.loc[0]["project"]})
-        result = ct.merge(mc, left_index=True, right_index=True)
-        final_result = result.to_json(orient="table")
-        logging.warning(f"Result: {final_result}")
-        return final_result
+        logging.warning(f"Invalid token: {request.headers.get('Authorization')}")
+        return abort(401)
 
+def check_authorization(request):
+    if request.headers.get('Authorization') and os.environ.get('AUTH_BEARER_TOKEN'):
+        auth_token = request.headers.get('Authorization').replace('Bearer ', '')
+        if os.environ['AUTH_BEARER_TOKEN'] == auth_token:
+            return True
+        
+    return False
 
 def test_config(cfg):
         """Test config from json body"""
