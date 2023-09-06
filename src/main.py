@@ -1,4 +1,5 @@
 import functions_framework
+import logging
 import jsonschema
 import pandas as pd
 import numpy as np
@@ -20,6 +21,7 @@ def main(request):
         <https://cloud.google.com/functions/docs/writing/http#http_frameworks>
     """
     cfg = request.get_json()
+    logging.debug(cfg)
     config_error = test_config(cfg)
     if config_error:
         return config_error
@@ -34,8 +36,9 @@ def main(request):
         mc = run_simulation(cfg, tp)
         mc = mc.rename(index={"issues": kanban_data.loc[0]["project"]})
         result = ct.merge(mc, left_index=True, right_index=True)
-
-        return result.to_json(orient="table")
+        final_result = result.to_json(orient="table")
+        logging.debug(final_result)
+        return final_result
 
 
 def test_config(cfg):
