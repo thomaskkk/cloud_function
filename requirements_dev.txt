@@ -5,6 +5,7 @@ jsonschema==4.19.0
 pandas==2.1.0
 numpy==1.25.2
 PyYAML==6.0.1
+logging==0.4.9.6
 
 
 #development libs
