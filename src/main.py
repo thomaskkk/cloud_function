@@ -56,7 +56,7 @@ def check_authorization(request):
 
 def test_config(cfg):
         """Test config from json body"""
-        validationSchema = {
+        validation_schema = {
             "type": "object",
             "properties": {
                 "Account_number": {"type": "integer"},
@@ -105,8 +105,9 @@ def test_config(cfg):
         }
         
         try:
-            jsonschema.validate(instance=cfg, schema=validationSchema)
+            jsonschema.validate(instance=cfg, schema=validation_schema)
         except jsonschema.exceptions.ValidationError as err:
+            logging.warning(f"Json validation error: {err}")
             return {
                 "message": {
                     "json_body": "You invalid entries in config Json",
@@ -131,7 +132,7 @@ def get_eazybi_report(report_url):
     dictio.columns = ["project", "date", "issue", "cycletime"]
     return dictio
 
-def calc_cycletime_percentile(cfg, kanban_data, percentile=None):
+def calc_cycletime_percentile(cfg, kanban_data):
     """Calculate cycletime percentiles on cfg with all dict entries"""
     if not kanban_data.empty:
         cycletime = None
@@ -205,12 +206,11 @@ def run_simulation(cfg, throughput, simul=None, simul_days=None):
     if simul_days is None:
         simul_days = cfg["Montecarlo"]["Simulation_days"]
 
-    mc = None
     if throughput is not None:
         dataset = throughput[["issues"]].reset_index(drop=True)
         samples = [
             getattr(dataset.sample(n=simul_days, replace=True).sum(), "issues")
-            for i in range(simul)
+            for _ in range(simul)
         ]
         samples = pd.DataFrame(samples, columns=["Items"])
         distribution = (
@@ -227,15 +227,10 @@ def run_simulation(cfg, throughput, simul=None, simul_days=None):
             mc_results["montecarlo " + str(percentil) + "%"] = distribution.loc[
                 result_index, "Items"
             ]
-        if mc is None:
+
             mc = pd.DataFrame.from_dict(
                 mc_results, orient="index", columns=["issues"]
             ).transpose()
-        else:
-            temp_mc = pd.DataFrame.from_dict(
-                mc_results, orient="index", columns=["issues"]
-            ).transpose()
-            mc = pd.concat([mc, temp_mc])
+        return mc
     else:
         return None
-    return mc
